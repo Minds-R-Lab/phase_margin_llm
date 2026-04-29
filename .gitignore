@@ -26,3 +26,11 @@ env/
 
 # Local Anthropic / Ollama caches
 data/cache/
+
+# Source paper and bib (kept private; not part of the open code)
+phase_margin_llms.tex
+phase_margin_llms.pdf
+references.bib
+
+# Local experiment runs (large; can be regenerated)
+results/experiment_*/
