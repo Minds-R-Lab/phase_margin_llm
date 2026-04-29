@@ -252,3 +252,79 @@ class ParaphraseLoop(AgentLoop):
     @property
     def state(self) -> str:
         return self._state
+
+
+# ---------------------------------------------------------------------------
+# Path-beta: direct embedding-space perturbation injection
+# ---------------------------------------------------------------------------
+class EmbeddingProbeLoop(AgentLoop):
+    """Closed paraphrase loop with direct embedding-space probe injection.
+
+    Replaces ParaphraseLoop's textual-modifier mechanism with the operation
+    section 5.1 of the paper specifies:  the perturbation
+    ``epsilon * v * cos(Omega*k)`` is added to the *last input token's
+    embedding* before the transformer forward pass.  The observable is the
+    same model's last-hidden-state at the same token, so injection and
+    measurement live in the same hidden-state space.
+
+    Requires a ``TransformersClient`` (the Ollama HTTP API cannot expose
+    embedding-level hooks).
+    """
+
+    SYSTEM_PROMPT = (
+        "You are an expert paraphraser. Rephrase the user's sentence in "
+        "your own words, preserving the meaning. Reply with the rephrased "
+        "sentence ONLY -- no commentary, no labels, no quotes."
+    )
+
+    def __init__(
+        self,
+        client,                          # TransformersClient
+        initial_text: str = "Deep learning models trained on large corpora exhibit emergent capabilities.",
+        max_tokens: int = 96,
+        temperature: float = 0.7,
+    ):
+        self._llm = client
+        self._initial = initial_text
+        self._state = initial_text
+        self._max_tokens = max_tokens
+        self._temperature = temperature
+
+    @property
+    def dim(self) -> int:
+        return int(self._llm.hidden_dim)
+
+    @property
+    def embedder(self):
+        # The TransformersClient is its own embedder for this loop --
+        # observation lives in the same hidden-state space as injection.
+        return self._llm
+
+    def reset(self, seed: int | None = None) -> None:
+        self._state = self._initial
+
+    def step(
+        self,
+        perturbation_text: str = "",
+        perturbation_vector: Optional[np.ndarray] = None,
+        *,
+        seed: int | None = None,
+    ) -> np.ndarray:
+        # In Path-beta mode, perturbation_text is ignored.
+        msgs = [
+            Message(role="system", content=self.SYSTEM_PROMPT),
+            Message(role="user",   content=f"SENTENCE: {self._state}"),
+        ]
+        reply, last_hidden = self._llm.chat_with_perturbation(
+            messages=msgs,
+            perturbation_vector=perturbation_vector,
+            seed=seed,
+            temperature=self._temperature,
+            max_tokens=self._max_tokens,
+        )
+        self._state = (reply or "").strip() or self._state
+        return last_hidden
+
+    @property
+    def state(self) -> str:
+        return self._state

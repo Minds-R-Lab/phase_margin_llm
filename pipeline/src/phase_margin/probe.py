@@ -277,3 +277,48 @@ def hybrid_basis_paraphrase(
         seed=seed,
     )
     return base + pca
+
+
+def pca_vector_basis(
+    loop=None,
+    *,
+    embedder=None,
+    trajectory=None,
+    n_pca_steps: int = 24,
+    n_directions: int = 4,
+    seed: int = 0,
+):
+    """Vector-only PCA basis for direct embedding-injection probes (Path beta).
+
+    Same SVD as ``pca_text_basis`` but each ProbeDirection has only a unit
+    vector -- no anchor text.  Use this with ``EmbeddingProbeLoop`` where
+    the perturbation is injected directly into the model's input
+    embedding via a forward hook.
+
+    Either supply ``loop`` (we will run ``n_pca_steps`` unperturbed steps
+    and embed each via the loop's embedder) or supply a pre-computed
+    ``trajectory`` of shape ``(n, hidden_dim)``.
+    """
+    if trajectory is None:
+        if loop is None:
+            raise ValueError("either `loop` or `trajectory` must be provided")
+        loop.reset(seed=seed)
+        Z = np.array([loop.step(seed=seed) for _ in range(int(n_pca_steps))])
+    else:
+        Z = np.asarray(trajectory, dtype=float)
+    if Z.ndim != 2 or Z.shape[0] < 3:
+        raise ValueError("trajectory must be (n, d) with n >= 3")
+
+    Zc = Z - Z.mean(axis=0, keepdims=True)
+    _, _, Vt = np.linalg.svd(Zc, full_matrices=False)
+    n_dir = int(min(n_directions, Vt.shape[0]))
+
+    out = []
+    for i in range(n_dir):
+        v = Vt[i]
+        v_unit = v / (np.linalg.norm(v) + 1e-12)
+        d = ProbeDirection(name=f"pca{i}",
+                           vector=v_unit.astype(float).copy())
+        d._embedded = True
+        out.append(d)
+    return out
