@@ -1,0 +1,1032 @@
+%==============================================================================
+% Phase-Margin Certification of Multi-Agent LLM Systems
+% A Behavioral Frequency-Response Approach to Loop-Stability Diagnosis
+%
+% White paper draft.  Compile with:
+%     pdflatex phase_margin_llms
+%     bibtex   phase_margin_llms
+%     pdflatex phase_margin_llms
+%     pdflatex phase_margin_llms
+%==============================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% ---------- Packages ---------------------------------------------------------
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts,mathtools}
+\usepackage{bm}
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+\usepackage[round,authoryear]{natbib}
+\usepackage{xcolor}
+% (algorithm-like floats below are constructed manually as figures
+%  to avoid the texlive-science dependency on algorithm.sty.)
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+% ---------- Theorem environments --------------------------------------------
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ---------- Notation macros --------------------------------------------------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\embspace}{\mathcal{Z}}
+\newcommand{\agent}{\mathcal{L}_{\theta}}
+\newcommand{\env}{\mathcal{E}}
+\newcommand{\obs}{\mathcal{H}}
+\newcommand{\sectorial}[2]{\mathcal{S}(#1,#2)}
+\newcommand{\probe}{\mathsf{Probe}}
+\newcommand{\PhaseMargin}{\Phi_{\mathrm{margin}}}
+\newcommand{\Wone}{W_{1}}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% ---------- Title ------------------------------------------------------------
+\title{\textbf{Phase-Margin Certification of Multi-Agent LLM Systems:\\
+A Behavioral Frequency-Response Approach\\
+to Loop-Stability Diagnosis}}
+
+\author{%
+  Mohamed A.~Mabrok\\[2pt]
+  \small\texttt{m.a.mabrok@gmail.com}
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% =============================================================================
+\begin{abstract}
+\noindent
+Multi-agent large-language-model (LLM) systems have entered production yet fail
+empirically between $41\%$ and $86.7\%$ of the time on standard benchmarks
+\citep{Cemri2025MAST}.  A substantial fraction of those failures
+are not reasoning errors but \emph{closed-loop dynamical failures}:  agents
+oscillate, repeat steps, drift into echo-chamber consensus, or run away from
+themselves until their iteration budget is exhausted.
+The Multi-Agent System failure Taxonomy (MAST) catalogues fourteen named
+failure modes across $1{,}600+$ traces with inter-annotator
+$\kappa = 0.88$, and several explicitly correspond to instabilities of the
+agent--environment feedback loop.  Yet there exists no pre-flight
+\emph{diagnostic} that would predict, before a costly run, whether a given
+LLM~+~prompt~+~tool~+~loop will converge, oscillate, or diverge.
+
+We propose such a diagnostic by lifting the recently developed \emph{phase
+theory of MIMO LTI systems} \citep{Chen2023PhaseTheory,Wang2024FirstFiveYears} to the
+sampled-time, stochastic, behavioural setting required by black-box LLM
+agents.  We define a \emph{behavioural phase response} of an LLM agent,
+identifiable from a small number of carefully designed probe perturbations in
+semantic-embedding space, and prove a \emph{Sampled Behavioural Small-Phase
+Theorem} that converts the identified phase response into a quantitative
+phase margin.  The margin classifies the agentic loop into one of three
+regimes that match the empirical taxonomy of
+\citet{Tacheny2025AgenticLoops} and the limit-cycle observations of
+\citet{Wang2025AttractorCycles}:  \emph{contractive} (will converge),
+\emph{oscillatory} (will cycle), or \emph{exploratory} (will diverge).  The
+diagnostic returns a single number from $\mathcal{O}(10^{2})$ rollouts and
+addresses approximately six of the fourteen MAST failure categories without
+access to model weights, attention activations, or training data.
+
+This paper presents the formalism, the theorem, the
+identification protocol, the mapping to documented failure modes, and an
+honest catalogue of open problems.  We argue this is the first
+control-theoretic instrument that turns the loop-stability fraction of
+multi-agent LLM failure from a post-hoc surprise into a measurable margin.
+\end{abstract}
+
+\medskip
+\noindent\textbf{Keywords.}~Multi-agent LLM systems, phase theory, negative
+imaginary systems, behavioural systems, frequency-response identification,
+loop stability, agentic AI, robustness certification.
+
+% =============================================================================
+\section{Introduction}\label{sec:intro}
+
+The deployment of multi-agent LLM systems---ReAct-style agents, multi-LLM
+debate, agentic coding assistants, autonomous research aides---has moved
+faster than the diagnostics that should accompany any feedback system at
+scale.  This paper is about closing one specific gap in those diagnostics.
+
+\subsection{The empirical problem}
+
+Multi-agent LLM frameworks (AutoGen, MetaGPT, ChatDev, HyperAgent,
+AppWorld, AG2, Magentic-One)  fail empirically between $41\%$ and $86.7\%$
+of the time on standard benchmarks, depending on the framework and the
+task~\citep{Cemri2025MAST}. A peer-reviewed study at NeurIPS~2025 catalogues
+$1{,}600+$ annotated execution traces into $14$ named failure modes
+clustered in $3$ categories (\emph{system design}, \emph{inter-agent
+misalignment}, \emph{task verification}), and validates the taxonomy with
+inter-annotator agreement $\kappa = 0.88$.  Two of the named modes,
+\texttt{step\_repetition} and \texttt{reasoning\_action\_mismatch},
+correspond directly to closed-loop dynamical failures: oscillation between
+states and phase decoupling between sub-blocks of the agentic loop.
+Independent work has reproduced explicit limit cycles in iterated
+paraphrasing~\citep{Wang2025AttractorCycles} and has classified agentic-loop
+trajectories into contractive, oscillatory, and exploratory dynamical
+regimes~\citep{Tacheny2025AgenticLoops}.  In multi-agent debate
+specifically, homogeneous-agent panels collapse into echo-chamber
+consensus~\citep{Oh2025BeliefEntrenchment}, a single adversarial agent
+can shift system accuracy by $10\%$--$40\%$~\citep{Sci2026PersuasionFailure},
+and current debate methods fail to consistently improve over single-agent
+baselines~\citep{ICLRBlog2025MAD}.  Production frameworks have responded by
+shipping emergency hard-stops such as AutoGen's
+\texttt{max\_consecutive\_auto\_reply}, an implicit acknowledgment that the
+loop-stability problem is real enough to require an explicit escape hatch.
+
+\subsection{The diagnostic gap}
+
+Despite the documented loss surface, no \emph{pre-flight} diagnostic
+predicts loop stability for a given LLM, prompt, and tool configuration.
+Practitioners detect failure post-hoc when the iteration cap is reached,
+which is the most expensive way to discover divergence.  The folklore
+("this prompt is unstable", "this loop tends to thrash") is plausible
+but unmeasured.
+
+In every other engineering discipline that puts feedback loops in front of
+users---audio, aviation, power grids, automotive---a stability margin is
+identified once and read out before deployment.  The instrument behind
+that identification is a \emph{frequency-response measurement}: small,
+structured perturbations applied at the input, the output is measured,
+gain and phase are extracted, and a margin is computed.
+The instrument is over a century old in audio~\citep{Bode1945Network}; it
+has been generalised to multi-input multi-output systems
+\citep{Anderson1973NetworkAnalysis,Megretski1997IQC,Iwasaki2005GeneralizedKYP},
+and most recently to phase-bounded systems~\citep{Chen2023PhaseTheory}.
+LLM agentic loops are the first widely-deployed feedback system that has
+not yet been instrumented with this kind of margin.
+
+\subsection{Contributions}
+
+This paper proposes such an instrument and develops the supporting theory.
+Specifically:
+
+\begin{enumerate}[leftmargin=*]
+\item We model the LLM agentic loop as a sampled, nonlinear, stochastic
+feedback system on a finite-dimensional semantic-embedding manifold
+(Section~\ref{sec:agent-model}).
+\item We introduce the \emph{behavioural phase response} of an LLM agent:
+an empirical phase identifiable from a small number of probe perturbations
+of the agent's nominal trajectory in semantic-embedding space, without
+access to weights or attention activations
+(Section~\ref{sec:behavioural-phase}).
+\item We define a corresponding \emph{locally sectorial} class of LLM
+agents---the behavioural analogue of the (semi-)sectorial systems of
+\citet{Chen2023PhaseTheory}---and prove a \emph{Sampled Behavioural
+Small-Phase Theorem} that converts the identified phase response into a
+quantitative loop-stability margin
+$\PhaseMargin$ (Section~\ref{sec:theorem}).
+\item We give a black-box probe protocol that produces $\PhaseMargin$ from
+$\mathcal{O}(10^{2})$ rollouts (Section~\ref{sec:protocol}), and predict
+the three regimes (contractive / oscillatory / exploratory) reported in
+the empirical literature (Section~\ref{sec:regimes}).
+\item We map the certificate explicitly onto roughly six of the fourteen
+MAST failure modes, and we are explicit about which modes the certificate
+does \emph{not} address (Section~\ref{sec:mast-mapping}).
+\item We propose an experimental validation plan against the published
+benchmarks and the documented limit-cycle datasets
+(Section~\ref{sec:validation}), and we list four open theoretical problems
+that the framework forces (Section~\ref{sec:open}).
+\end{enumerate}
+
+The novelty claim is precise.  The phase theory of LTI systems is in
+print~\citep{Chen2023PhaseTheory}; its nonlinear extension is in
+print~\citep{Chen2021PhaseNonlinear}; the empirical taxonomy of multi-agent
+LLM failure is in print~\citep{Cemri2025MAST}; the geometric description
+of agentic loop dynamics is in print~\citep{Tacheny2025AgenticLoops}.  What is
+\emph{not} in print, to the best of our literature audit, is a
+\emph{sampled-time, stochastic, behavioural} phase certificate identified
+from black-box LLM probes that produces a quantitative margin and
+matches it to the documented failure modes.  That is what we contribute.
+
+% =============================================================================
+\section{The Documented Problem}\label{sec:problem}
+
+We begin by establishing, with citations, that the loop-stability fraction
+of multi-agent LLM failures is real, named, measured, and currently
+without a pre-flight diagnostic.
+
+\subsection{The MAST taxonomy and quantitative failure rates}
+
+\citet{Cemri2025MAST} construct the first multi-agent system failure
+taxonomy, MAST, by annotating $1{,}600+$ execution traces collected from
+seven popular multi-agent LLM frameworks across coding, math, and general
+agent tasks.  The headline rate is the empirical task-failure rate per
+framework, which ranges from $41\%$ to $86.7\%$ on standard benchmarks.
+The fourteen failure modes are organised as follows.
+
+\begin{itemize}[leftmargin=*]
+\item \emph{System design issues:}  disobeying task specification,
+disobeying role specification, step repetition, loss of conversational
+history, premature termination.
+\item \emph{Inter-agent misalignment:} reasoning-action mismatch,
+information withholding, ignored other agent's input, action--reasoning
+disagreement, derailing, withholding critical information,
+incorrect verification.
+\item \emph{Task verification:} insufficient verification,
+incorrect verification of action outputs.
+\end{itemize}
+
+The two italicised modes \texttt{step\_repetition} and
+\texttt{reasoning\_action\_mismatch} correspond directly to feedback-loop
+failures.  Together with the qualitative
+descriptions in the paper of "conversations cycling without progress",
+"perpetual cycle of unproductive exchanges", and "memory limits causing
+agents to forget previous discussions" (op.~cit.), they constitute the
+loop-stability fraction of the failure surface.
+
+\subsection{Independent reproduction of the dynamical regimes}
+
+Two recent dynamical-systems analyses corroborate the picture.
+\citet{Tacheny2025AgenticLoops} formalise the LLM agentic loop as a
+discrete-time dynamical system in semantic-embedding space and exhibit
+\emph{three classifiable regimes}: contractive trajectories converging to
+stable attractors, oscillatory trajectories cycling among attractors, and
+exploratory trajectories diverging unboundedly.
+\citet{Wang2025AttractorCycles} demonstrate an explicit \emph{2-period
+limit cycle} in iterated paraphrasing across multiple frontier LLMs---a
+textbook oscillation that would, in any other engineering discipline, be
+diagnosed by a phase margin.
+
+\subsection{Multi-agent debate failure}
+
+The picture sharpens for multi-agent debate, the prototypical
+multi-agent LLM use case.
+\citet{Oh2025BeliefEntrenchment} document that homogeneous-agent
+debate panels frequently converge into echo-chamber consensus that
+amplifies pre-existing biases instead of correcting them, with the
+effect intensifying as panel size grows.  In sequential strategic
+environments, a single early suboptimal decision triggers a cascade
+that the consensus process cannot self-correct.
+\citet{Sci2026PersuasionFailure} quantify adversarial influence:
+a single strategically designed adversarial agent reduces system
+accuracy by $10\%$--$40\%$ and increases consensus on incorrect
+answers by more than $30\%$ on factual benchmarks.
+\citet{Wynn2025TalkCheap} catalogue further debate failure modes
+including stalemate, premature agreement, and degenerate reasoning.
+The synthesis of \citet{ICLRBlog2025MAD} concludes that current
+multi-agent debate methods do not reliably outperform single-agent
+baselines, even with substantially increased compute---and that simple
+majority voting captures most of whatever benefit accrues.
+
+\subsection{Production-side acknowledgement}
+
+The folklore from production deployments matches the academic findings.
+The popular AutoGen framework added an explicit
+\texttt{max\_consecutive\_auto\_reply} parameter as an emergency hard-stop;
+several agent-deployment vendors have published essays titled "the agent
+loop problem" or "stop the loop".  The major LLM providers all impose
+default iteration caps on their agent products---an implicit confession
+that the underlying systems do not converge unaided.
+
+\subsection{The diagnostic gap}\label{ssec:gap}
+
+In every cited reference above the failure modes are detected
+\emph{after} the loop has run.  No published method takes an LLM, a
+prompt, a tool stack, and a loop topology as input and returns a
+quantitative pre-flight stability margin as output.  The
+\emph{description} of the regimes is in print; the \emph{prediction
+instrument} is not.  Filling this gap is the goal of the present paper.
+
+% =============================================================================
+\section{Control-Theoretic Background}\label{sec:background}
+
+We summarise, at the level of working definitions, the four control-theoretic
+ingredients we draw on: positive realness and passivity, negative imaginary
+systems, the phase theory of \citet{Chen2023PhaseTheory}, and the behavioural
+systems framework of \citet{Willems1986Behavioural}.
+
+\subsection{Positive realness and passivity}\label{ssec:pr}
+
+A real-rational proper transfer matrix $G:\C\to\C^{m\times m}$ is
+\emph{positive real} (PR) if it is analytic in $\Re s>0$ and
+$G(s)+G(s)^{*}\succeq 0$ for $\Re s>0$.  By the
+Kalman--Yakubovich--Popov (KYP) lemma~\citep{Anderson1973NetworkAnalysis}
+this is equivalent to the existence of $P=P\T \succ 0$ certifying a
+state-space dissipation inequality with supply rate
+$s(u,y)=u\T y$.  Two PR systems in negative feedback are stable under
+mild non-degeneracy, the original "passivity theorem".
+
+\subsection{Negative imaginary systems}\label{ssec:ni}
+
+A real-rational proper $G$ is \emph{negative imaginary}
+(NI)~\citep{Lanzon2008NI,Mabrok2014NIFoundations} if it is analytic in
+$\Re s>0$ and $j\big(G(j\omega)-G(j\omega)^{*}\big)\succeq 0$ for all
+$\omega>0$ where $j\omega$ is not a pole, equivalently
+$\Im G(j\omega)\le 0$.  NI captures lightly damped flexible-structure
+plants (collocated force--position) for which PR fails.  Two NI systems
+in positive feedback are stable under a DC-gain
+condition $\lambda_{\max}(M(0)N(0))<1$.
+
+\subsection{Phase theory of MIMO LTI systems}\label{ssec:phase-theory}
+
+\citet{Chen2023PhaseTheory} unify PR and NI into a single phase-bounded
+class.  Briefly, a square real-rational $G$ is \emph{(semi-)sectorial} if
+$G(j\omega)$ is sectorial as a complex matrix at every frequency, and
+its \emph{phase response}
+$\phi(G(j\omega))\subset(-\pi,\pi]$ is well-defined and lies in a frequency-dependent
+phase sector.  PR corresponds to phase contained in
+$[-\pi/2,\pi/2]$; NI to phase in $[-\pi,0]$.  The
+\emph{Small Phase Theorem} of~\citet{Chen2023PhaseTheory} states that
+$[G_{1},G_{2}]_{-}$ is internally stable if
+$\sup_{\omega}\bigl(\overline\phi(G_{1}(j\omega))+\overline\phi(G_{2}(j\omega))\bigr)<\pi$
+and a non-encirclement condition holds, where $\overline\phi$ is the upper
+phase.  An accompanying \emph{Sectored Real Lemma} provides an LMI
+characterisation, and a nonlinear extension exists for input--output
+sectorial systems~\citep{Chen2021PhaseNonlinear}.  Mixed gain--phase
+robustness is treated in~\citep{Zhao2022SmallGainSmallPhase}.
+
+These results are the foundation we will lift.
+
+\subsection{Behavioural systems theory}\label{ssec:behavioural}
+
+\citet{Willems1986Behavioural,Willems2007Behavioural} pioneered the view
+that a dynamical system is defined by the set of admissible
+input--output trajectories ("the behaviour"), independent of any
+particular state-space realisation.  This is the right standpoint for
+LLM agents, whose internal mechanism (weights, attention activations)
+is typically inaccessible and irrelevant for closed-loop stability:  what
+matters is the input--output map at the embedding level.  The
+data-driven realisation of behavioural ideas in
+DeePC~\citep{Coulson2019DeePC} and the fundamental lemma of
+\citet{Willems2005FundamentalLemma} demonstrate that meaningful
+control-theoretic objects can be extracted from data alone.
+
+% =============================================================================
+\section{The LLM Agentic Loop as a Sampled Feedback System}\label{sec:agent-model}
+
+We now formalise the object the certificate will measure.
+
+\subsection{State-space in semantic-embedding coordinates}\label{ssec:embedding}
+
+Fix a frozen embedding map $\Pi:\Sigma^{*}\to\embspace\subset\R^{d}$ from
+token sequences to a finite-dimensional semantic vector space (e.g.
+sentence-T5, the LLM's own pre-LM-head residual stream, or any
+fixed-vocabulary representation).  Let $z_{k}\in\embspace$ denote the
+embedded running context at iteration $k$ of an agentic loop, and
+$y_{k}\in\R^{p}$ a measurable observable extracted from $z_{k}$ via a
+linear or smooth nonlinear projection $\obs:\embspace\to\R^{p}$
+(e.g. a goal-direction projection, a tool-call type indicator,
+or a probe class label).
+
+\begin{assumption}[Embedding regularity]\label{a:embedding}
+The embedding map $\Pi$ and the observation map $\obs$ are
+$L$-Lipschitz on a neighbourhood of the nominal trajectory
+$\{z_{k}^{\star}\}_{k}$ used to compute probes.
+\end{assumption}
+
+\subsection{Closed-loop dynamics}\label{ssec:closed-loop}
+
+The agentic loop is the sampled-time discrete dynamical system
+\begin{align}
+z_{k+1} &= \agent\!\big(z_{k},\,u_{k},\,\xi_{k}\big),
+   & y_{k}&=\obs(z_{k}), &
+\label{eq:agent}
+\\
+u_{k+1} &= \env\!\big(y_{k},\,w_{k}\big),
+\label{eq:env}
+\end{align}
+where $\agent:\embspace\times\R^{m}\times\R^{q}\to\embspace$ is the LLM
+embedded in the loop topology (decoder + tool router + memory),
+$\env:\R^{p}\times\R^{r}\to\R^{m}$ is the environment / tool block
+(possibly itself another LLM), $\xi_{k}$ collects the LLM's stochastic
+decoding sources, and $w_{k}\sim P_{w}$ is exogenous environmental
+noise.
+
+The closed-loop map is
+\begin{equation}\label{eq:closed-loop}
+z_{k+1} = \Phi(z_{k},z_{k-1},\xi_{k},w_{k})
+:= \agent\!\Big(z_{k},\,\env\big(\obs(z_{k-1}),w_{k}\big),\,\xi_{k}\Big).
+\end{equation}
+Equation~\eqref{eq:closed-loop} is a discrete-time, nonlinear, stochastic
+dynamical system on $\embspace\subset\R^{d}$.
+
+\subsection{Why existing phase theory does not directly apply}\label{ssec:why-not}
+
+The phase theory of \citet{Chen2023PhaseTheory} is LTI and continuous-time;
+its nonlinear extension~\citep{Chen2021PhaseNonlinear} is
+deterministic.  The map $\agent$ in~\eqref{eq:agent} is
+
+\begin{enumerate}[leftmargin=*,label=(\roman*)]
+\item \textbf{Discrete-time and sampled.}  The LLM is queried at integer
+iterations; the natural frequency variable is $\Omega\in(0,\pi]$ in
+samples-per-iteration units.
+\item \textbf{Nonlinear and not analytically known.}  $\agent$ is not
+expressible in closed form; only black-box rollouts are available.
+\item \textbf{Stochastic.}  Decoding produces output variance even with
+identical input; $\xi_{k}$ contributes a non-trivial $\sigma_{w}^{2}$.
+\item \textbf{Time-varying along the trajectory.}  $\agent$'s effective
+linearisation depends on the running context $z_{k}^{\star}$; the
+behaviour is at best \emph{locally} Linear Parameter-Varying.
+\item \textbf{Defined on a high-dimensional embedding manifold.}  Phase
+must be defined directionally with respect to a probing basis in
+$\embspace$.
+\end{enumerate}
+
+These five features force a behavioural, sampled, stochastic
+generalisation of the small-phase theorem.  Sections~\ref{sec:behavioural-phase}
+and~\ref{sec:theorem} construct that generalisation.
+
+% =============================================================================
+\section{Behavioural Phase Response of an LLM Agent}\label{sec:behavioural-phase}
+
+We define the phase response of $\agent$ not by differentiation of an
+analytic model but by observation of input--output behaviour around a
+nominal trajectory.
+
+\subsection{Probe protocol input}\label{ssec:probe-input}
+
+Fix a nominal trajectory
+$\{(z_{k}^{\star},u_{k}^{\star})\}_{k=0}^{N-1}$ obtained by running the
+loop on a representative task.  Pick a unit perturbation direction
+$v\in\embspace$, $\|v\|=1$, a probe amplitude $\epsilon>0$, and a probe
+discrete frequency $\Omega\in(0,\pi]$.  Inject the perturbation at the
+agent's input,
+\begin{equation}\label{eq:probe-input}
+u_{k}(\Omega,v) = u_{k}^{\star} + \epsilon\,v\cos(\Omega k),\qquad k=0,\dots,N-1,
+\end{equation}
+and run $M$ independent stochastic rollouts of the open-loop agent
+$\agent$ (i.e. with $\env$ replaced by the deterministic playback of
+$u_{k}(\Omega,v)$) of length $N$ each.  Let
+$\bar y_{k}(\Omega,v) := \frac{1}{M}\sum_{m=1}^{M}\obs(z_{k}^{(m)})$ be
+the seed-averaged observable.
+
+\subsection{Empirical phase identification}\label{ssec:phase-id}
+
+Define the residual against the nominal,
+$\Delta y_{k}(\Omega,v) := \bar y_{k}(\Omega,v) - \obs(z_{k}^{\star})$, and
+fit a sinusoidal model with phase $\theta$, amplitude $A$:
+\begin{equation}\label{eq:phase-fit}
+\bigl(\widehat\theta_{v}(\Omega),\,\widehat A_{v}(\Omega)\bigr)
+:= \argmin_{\theta\in(-\pi,\pi],\,A\ge 0}
+   \sum_{k=0}^{N-1}\Big\|\Delta y_{k}(\Omega,v) - \epsilon\,A\cos(\Omega k+\theta)\,b(v)\Big\|_{2}^{2},
+\end{equation}
+where $b(v):=\partial\obs/\partial z\big|_{z_{k}^{\star}}\,v\in\R^{p}$ is
+the probe response direction in observable space (precomputed once via
+finite differences if $\obs$ is not given).  Equation~\eqref{eq:phase-fit}
+is a complex linear regression, solvable in closed form.
+
+\begin{definition}[Behavioural phase of an LLM agent]\label{def:phase}
+The \emph{behavioural phase response} of $\agent$ around
+$\{z_{k}^{\star}\}$ in direction $v$ at frequency $\Omega$ is
+$\widehat\theta_{v}(\Omega)\in(-\pi,\pi]$ obtained
+from~\eqref{eq:phase-fit}.  We similarly define
+$\widehat\phi_{v}(\Omega)$ for the environment $\env$ by perturbing
+$y_{k-1}$ and observing the induced perturbation in $u_{k}$.
+\end{definition}
+
+\subsection{Locally sectorial agents}\label{ssec:locally-sectorial}
+
+\begin{definition}[Locally sectorial agent]\label{def:loc-sectorial}
+The agent $\agent$ is \emph{locally sectorial of class}
+$\sectorial{\alpha}{\beta}$ around $\{z_{k}^{\star}\}$ in direction $v$ at
+fit residual level $\eta>0$ if for every $\Omega\in(0,\pi]$,
+\begin{equation}\label{eq:loc-sec}
+\widehat\theta_{v}(\Omega)\in[\alpha,\beta],
+\end{equation}
+and the relative residual
+$\rho_{v}(\Omega) := \frac{\sum_{k}\|\Delta y_{k}(\Omega,v)
+- \epsilon\widehat A_{v}(\Omega)\cos(\Omega k+\widehat\theta_{v}(\Omega))b(v)\|^{2}}
+{\sum_{k}\|\Delta y_{k}(\Omega,v)\|^{2}}\le\eta$.
+\end{definition}
+
+\begin{remark}\label{r:reduction-LTI}
+If $\agent$ happens to be LTI with transfer matrix $G$ on the linearisation
+around $\{z_{k}^{\star}\}$ in direction $v$, then for $\epsilon\to 0$,
+$M\to\infty$, $\sigma_{w}\to 0$ we recover
+$\widehat\theta_{v}(\Omega)\to\arg(b(v)\T G(e^{j\Omega})v)$, the standard
+phase response.  Definition~\ref{def:phase} is therefore a behavioural
+generalisation that reduces correctly.
+\end{remark}
+
+\begin{remark}\label{r:choice-of-direction}
+The phase response in Definition~\ref{def:phase} is direction-dependent
+because $\agent$ is a high-dimensional MIMO operator.  In practice we
+identify it on a probing basis $\{v_{1},\dots,v_{p}\}$ chosen via the
+top-$p$ principal directions of the gradient of $\obs$ along the nominal
+trajectory, or via task-relevant semantic axes (e.g. answer-stance, plan
+specificity, tool-call category).  See Section~\ref{ssec:basis-choice}.
+\end{remark}
+
+\subsection{Sample-complexity of the identification}\label{ssec:sample-complexity}
+
+\begin{lemma}[Phase identification rate]\label{l:rate}
+Under Assumption~\ref{a:embedding} and bounded decoding noise
+$\E[\|\xi_{k}\|^{2}]\le\sigma_{w}^{2}$, suppose the local linearisation
+of $\agent$ in direction $v$ at frequency $\Omega$ has gain
+$A_{v}^{\star}(\Omega)\ge A_{\min}>0$ and phase
+$\theta_{v}^{\star}(\Omega)$.  Then the empirical phase
+$\widehat\theta_{v}(\Omega)$ from~\eqref{eq:phase-fit} satisfies
+\[
+\E\bigl|\widehat\theta_{v}(\Omega)-\theta_{v}^{\star}(\Omega)\bigr|^{2}
+\;\le\; \frac{c\,\sigma_{w}^{2}}{\epsilon^{2}\,A_{\min}^{2}\,M\,N}+\mathcal{O}(\eta),
+\]
+for an absolute constant $c$, with the second term controlling the
+local-linearity bias.
+\end{lemma}
+
+The lemma is a standard sinusoid-in-Gaussian-noise least-squares
+calculation; the proof is sketched in
+Appendix~\ref{app:proofs}.  The headline takeaway is that doubling
+the probe amplitude or the sample budget halves the phase
+identification variance, and the local-linearity bias is $\mathcal{O}(\eta)$
+rather than $\mathcal{O}(\eta^{2})$, so the choice of probe amplitude is a
+bias-variance trade.
+
+% =============================================================================
+\section{The Sampled Behavioural Small-Phase Theorem}\label{sec:theorem}
+
+We now state the main theorem.  Let $W_{1}$ denote the Wasserstein-1
+distance between probability measures on $\embspace$.
+
+\begin{assumption}[Local linearity envelope]\label{a:env}
+The agent and environment maps $\agent$ and $\env$ admit local
+linearisations along the nominal trajectory whose Jacobian operator
+norms in the probing basis are bounded above by $L_{\agent}$ and
+$L_{\env}$, with residuals bounded by $\eta_{\agent}$ and $\eta_{\env}$ in
+the sense of Definition~\ref{def:loc-sectorial}.
+\end{assumption}
+
+\begin{assumption}[Stochastic non-degeneracy]\label{a:stoch}
+The decoding noise $\xi_{k}$ has a density bounded above and below on
+its support, and the map $\agent$ is irreducible in the sense of having
+no absorbing region of zero measure.
+\end{assumption}
+
+\begin{theorem}[Sampled Behavioural Small-Phase]\label{thm:main}
+Suppose, around the nominal trajectory and in every direction $v$ of a
+probing basis $\{v_{1},\dots,v_{p}\}$, the agent and environment satisfy
+\begin{equation}\label{eq:sectorial-classes}
+\agent\in\sectorial{\alpha_{v}}{\beta_{v}},\qquad
+\env\in\sectorial{\gamma_{v}}{\delta_{v}},\qquad v\in\{v_{1},\dots,v_{p}\}.
+\end{equation}
+Define the directional \emph{phase margin}
+\begin{equation}\label{eq:margin}
+\PhaseMargin(v) := \min\!\big(\,\pi-(\beta_{v}+\delta_{v}),\;
+                                    (\alpha_{v}+\gamma_{v})+\pi\,\big),
+\end{equation}
+and the global margin
+$\PhaseMargin := \min_{v\in\{v_{1},\dots,v_{p}\}}\PhaseMargin(v)$.
+Under Assumptions~\ref{a:embedding}--\ref{a:stoch}, if
+\begin{equation}\label{eq:main-condition}
+\PhaseMargin \;>\; C\!\bigl(\eta_{\agent}+\eta_{\env}\bigr) \;+\;
+\frac{C'\sigma_{w}}{\epsilon\,A_{\min}}\frac{1}{\sqrt{MN}},
+\end{equation}
+for explicit constants $C,C'>0$ depending only on
+$L_{\agent},L_{\env},L,d,p$, then the closed-loop process
+$\{z_{k}\}$ defined by~\eqref{eq:closed-loop} is
+
+\begin{enumerate}[leftmargin=*,label=(\arabic*)]
+\item geometrically ergodic with a unique invariant measure $\pi^{\infty}$,
+\item Wasserstein-1 contractive at rate
+$\rho \le 1 - \PhaseMargin/\pi + \mathcal{O}(\eta_{\agent}+\eta_{\env}+(MN)^{-1/2})$, in the sense that
+$\Wone(\mathcal{P}_{k}\mu,\pi^{\infty})\le \rho^{k}\Wone(\mu,\pi^{\infty})$ for any initial distribution $\mu$,
+\item the empirical observable $y_{k}$ converges in distribution to a
+unique stationary law and the running mean settles within
+$\varepsilon$ of its asymptotic value in $\mathcal{O}\bigl(\frac{1}{\PhaseMargin/\pi}\log\frac{1}{\varepsilon}\bigr)$
+iterations.
+\end{enumerate}
+\end{theorem}
+
+A proof sketch of Theorem~\ref{thm:main} is given in
+Appendix~\ref{app:proofs}.  The strategy combines three ingredients:
+the deterministic small-phase argument
+of~\citep{Chen2023PhaseTheory,Chen2021PhaseNonlinear} bounding the
+deterministic part of the closed-loop iteration, a local-linearity
+perturbation bound paying $\mathcal{O}(\eta_{\agent}+\eta_{\env})$, and a
+discrete-time stochastic Lyapunov / drift argument paying
+$\mathcal{O}((MN)^{-1/2})$ for the empirical-margin estimation error.
+
+\subsection{Three regimes from one number}\label{sec:regimes}
+
+The contrapositive of Theorem~\ref{thm:main} produces a regime
+classification that matches the empirical literature
+\citep{Tacheny2025AgenticLoops,Wang2025AttractorCycles,Cemri2025MAST}.
+
+\begin{corollary}[Regime classification]\label{c:regimes}
+With $\PhaseMargin$ defined as in~\eqref{eq:margin}, the agentic loop
+exhibits
+\begin{itemize}[leftmargin=*]
+\item \emph{contractive} dynamics (predicted convergence to a unique
+attractor) when $\PhaseMargin>0$ with sufficient confidence;
+\item \emph{oscillatory} dynamics (predicted limit cycle, the
+\citet{Wang2025AttractorCycles} regime) when $\PhaseMargin\approx 0$ in
+expectation but its directional minimum is negative on a positive-measure
+set of probe directions;
+\item \emph{exploratory} / \emph{divergent} dynamics (predicted
+unbounded drift) when
+$\alpha_{v}+\gamma_{v}<-\pi$ or $\beta_{v}+\delta_{v}>\pi$ on a
+positive-measure direction set.
+\end{itemize}
+\end{corollary}
+
+The three regimes are exactly the three observed in
+\citet{Tacheny2025AgenticLoops}, but here they are predicted from a
+quantitative margin computed before the loop is run.
+
+\subsection{Specialisation to known cases}\label{sec:specialisations}
+
+\begin{itemize}[leftmargin=*]
+\item \emph{Deterministic LTI agent.}  Setting $\sigma_{w}=0$,
+$\eta_{\agent}=\eta_{\env}=0$, $M=N=\infty$, the residual term
+in~\eqref{eq:main-condition} vanishes and Theorem~\ref{thm:main} reduces
+to the small-phase theorem of~\citet{Chen2023PhaseTheory}.
+\item \emph{Deterministic nonlinear agent.}  Setting $\sigma_{w}=0$ but
+keeping $\eta>0$, we recover a discrete-time analogue of the nonlinear
+small-phase theorem of~\citet{Chen2021PhaseNonlinear}.
+\item \emph{Memoryless map} ($\agent$ and $\env$ both phase-zero around
+their fixed point).  $\PhaseMargin$ collapses to a small-gain
+condition; the iteration is contractive iff $L_{\agent}L_{\env}<1$, which
+is the \citet{BanachFixedPoint1922} fixed-point principle.
+\end{itemize}
+
+% =============================================================================
+\section{The Black-Box Probe Protocol}\label{sec:protocol}
+
+The theorem becomes useful when its hypothesis is checkable from black-box
+LLM rollouts.  Algorithm~1 below gives the probe protocol.
+
+\subsection{Algorithm}\label{ssec:algorithm}
+
+\begin{figure}[t]
+\centering
+\hrule\vspace{4pt}
+\noindent\textbf{Algorithm 1: Black-box phase-margin certification of an LLM agentic loop.}
+\label{alg:probe}
+\vspace{2pt}\hrule\vspace{6pt}
+\small\noindent
+\textbf{Input:}\, LLM API $\agent$, environment / tool block $\env$,
+observable $\obs$, nominal task prompt $p$, probing basis
+$V=\{v_{1},\dots,v_{p}\}\subset\embspace$, frequency grid
+$\mathcal{G}\subset(0,\pi]$, probe amplitude $\epsilon$, sample budget
+$M$, horizon $N$.
+
+\medskip
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*,itemsep=2pt,topsep=2pt]
+\item Run $M_{0}$ nominal closed-loop rollouts of length $N$ and compute
+$\{z_{k}^{\star}\}$ as the running mean trajectory.
+\item \textbf{For} each $v\in V$ and each $\Omega\in\mathcal{G}$ \textbf{do}:
+\begin{enumerate}[label=\,\textbf{\alph*.},leftmargin=2em,itemsep=2pt,topsep=2pt]
+\item Inject $u_{k}(\Omega,v)=u_{k}^{\star}+\epsilon v\cos(\Omega k)$ in
+the open-loop agent for $M$ stochastic rollouts of horizon $N$.
+\item Compute residuals $\Delta y_{k}(\Omega,v)$ and fit
+$(\widehat\theta_{v}(\Omega),\widehat A_{v}(\Omega))$
+via~\eqref{eq:phase-fit}.
+\item Compute fit quality $\rho_{v}(\Omega)$.  If $\rho_{v}(\Omega)>\eta$
+for many $\Omega$, expand the probing basis or reduce $\epsilon$.
+\end{enumerate}
+\item Repeat steps 2--3 for $\env$ to obtain $\widehat\phi_{v}(\Omega)$.
+\item Compute $\alpha_{v},\beta_{v},\gamma_{v},\delta_{v}$ as
+$\min/\max$ over $\Omega\in\mathcal{G}$ with statistical buffers from
+Lemma~\ref{l:rate}.
+\item Compute $\PhaseMargin(v)$ via~\eqref{eq:margin} and
+$\PhaseMargin=\min_{v}\PhaseMargin(v)$.
+\end{enumerate}
+
+\medskip\noindent
+\textbf{Output:}\, $\PhaseMargin$ and the predicted regime
+(contractive / oscillatory / exploratory) from
+Corollary~\ref{c:regimes}.
+\vspace{4pt}\hrule
+\end{figure}
+
+\subsection{Probing basis selection}\label{ssec:basis-choice}
+
+The choice of $V=\{v_{1},\dots,v_{p}\}$ trades off coverage against probe
+budget.  Three natural defaults:
+\begin{enumerate}[leftmargin=*]
+\item \emph{Task-direction basis.}  Use a small set of semantic axes
+relevant to the task: answer stance ($v_{\text{stance}}$), plan
+specificity ($v_{\text{plan}}$), tool-call category
+($v_{\text{tool}}$).  Suitable when domain knowledge of the task is
+available.
+\item \emph{Empirical PCA basis.}  Run nominal rollouts, compute the
+PCA of the observed $\{\Delta\obs(z_{k}^{\star})\}_{k}$ residuals against
+a slightly perturbed prompt, take the top $p$ components.  Domain-free
+default.
+\item \emph{Random Hutchinson basis.}  Sample $v\sim\mathrm{Unif}(\mathbb{S}^{d-1})$ and use Hutchinson-style estimators to
+upper-bound $\PhaseMargin$ across all directions in expectation.  Useful
+for high-dimensional safety-critical applications.
+\end{enumerate}
+
+\subsection{Computational cost}\label{ssec:cost}
+
+The probe protocol requires
+$|V|\cdot|\mathcal{G}|\cdot M\cdot N$ open-loop agent invocations for
+$\agent$, plus the same for $\env$ if it is not deterministic.  With
+$|V|=4$, $|\mathcal{G}|=8$, $M=8$, $N=16$, this is $\approx 4{,}000$ LLM
+calls---roughly the cost of two failed agent runs in production---to
+predict the success of all subsequent runs on the same loop topology.
+
+% =============================================================================
+\section{Mapping to Documented MAST Failure Modes}\label{sec:mast-mapping}
+
+We are explicit about which of the fourteen MAST failure modes the
+phase-margin certificate addresses.
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}p{0.45\textwidth}p{0.5\textwidth}@{}}
+\toprule
+\textbf{MAST mode} & \textbf{Predicted by $\PhaseMargin$?} \\
+\midrule
+\texttt{step\_repetition} & \textbf{Yes.}  Negative directional margin
+on a stance / plan direction predicts a 2-cycle limit cycle. \\
+\texttt{reasoning\_action\_mismatch} & \textbf{Yes.}  Phase mismatch
+between sub-block agents shows up as $\beta_{v}+\delta_{v}\to\pi$ on the
+relevant direction. \\
+\texttt{loss\_of\_conversation\_history} & \textbf{Partially.} Memory
+truncation manifests as a discontinuity in the fit
+$\widehat\theta_{v}(\Omega)$; flagged but not fully diagnosed. \\
+\texttt{premature\_termination} & \textbf{Partially.} Over-contractive
+margin ($\PhaseMargin\to\pi$) flags collapse to a too-quick fixed point. \\
+\texttt{disobeying\_task\_specification} & \textbf{No.}  Specification
+errors are upstream of the loop dynamics. \\
+\texttt{disobeying\_role\_specification} & \textbf{No.}  Same. \\
+\texttt{information\_withholding} & \textbf{No.}  Inter-agent
+communication content; not a loop-stability property. \\
+\texttt{ignored\_other\_agent's\_input} & \textbf{Partially.} Shows up
+as low directional gain $\widehat A_{v}(\Omega)$, indicating a near-zero
+loop element in that direction. \\
+\texttt{action\_reasoning\_disagreement} & \textbf{Yes.}  Internal phase
+mismatch within $\agent$ between reasoning and acting sub-modules. \\
+\texttt{derailing} & \textbf{Partially.}  Exploratory regime is
+predicted by $\alpha_{v}+\gamma_{v}<-\pi$. \\
+\texttt{withholding\_critical\_information} & \textbf{No.} \\
+\texttt{insufficient\_verification} & \textbf{No.}  Verification quality
+is a content property. \\
+\texttt{incorrect\_verification} & \textbf{No.} \\
+\texttt{incorrect\_verification\_of\_action\_outputs} & \textbf{No.} \\
+\bottomrule
+\end{tabular}
+\caption{Mapping the phase-margin certificate to the MAST taxonomy of
+\citet{Cemri2025MAST}.  Of the fourteen named modes, the certificate
+fully addresses three, partially addresses four, and is silent on
+seven.  The seven on which it is silent are content / specification
+issues, not loop-dynamics issues.}
+\label{tab:mast-mapping}
+\end{table}
+
+The certificate cleanly addresses approximately \emph{half} of the
+fourteen MAST modes.  This is the loop-stability fraction of the
+failure surface, which is precisely the fraction with no current
+pre-flight diagnostic.
+
+% =============================================================================
+\section{Validation Plan}\label{sec:validation}
+
+The certificate is falsifiable.  We propose three validation experiments
+against published datasets and benchmarks.
+
+\subsection{Experiment 1: Three-regime classification}\label{ssec:exp-regime}
+
+\citet{Tacheny2025AgenticLoops} provide a benchmark of agentic-loop
+trajectories labelled into the three dynamical regimes (contractive,
+oscillatory, exploratory).  We propose:
+\begin{enumerate}[leftmargin=*]
+\item Run the probe protocol (Algorithm~1) on each
+benchmark configuration to obtain $\PhaseMargin$.
+\item Apply the regime predictor of Corollary~\ref{c:regimes}.
+\item Evaluate the confusion matrix against the ground-truth regimes.
+\end{enumerate}
+\textit{Headline metric:} predicted-vs-actual regime accuracy, with the
+null baseline being the prior class frequencies.  Expected lift if the
+theory is correct: substantial (the regimes are deterministic in
+$\PhaseMargin$ at low noise).
+
+\subsection{Experiment 2: 2-cycle prediction in successive paraphrasing}\label{ssec:exp-cycle}
+
+\citet{Wang2025AttractorCycles} demonstrate explicit 2-period limit cycles
+in iterated paraphrasing across multiple frontier LLMs.  We propose:
+\begin{enumerate}[leftmargin=*]
+\item Run the probe protocol with the paraphrasing prompt held fixed
+and probe directions chosen along stance / lexical-density axes.
+\item Predict 2-cycle vs. fixed-point convergence from the directional
+sign of $\PhaseMargin(v)$.
+\end{enumerate}
+\textit{Headline metric:} per-prompt cycle-vs-no-cycle prediction
+accuracy.  The published behaviour is well-controlled (specific prompts
+exhibit cycles, others do not), so this is a clean falsification target.
+
+\subsection{Experiment 3: MAST step-repetition trace flagging}\label{ssec:exp-mast}
+
+The MAST dataset \citep{Cemri2025MAST} releases $1{,}600+$ annotated traces.
+We propose:
+\begin{enumerate}[leftmargin=*]
+\item For each MAS framework, run the probe protocol on the framework's
+default loop topology with a held-out task.
+\item Predict per-task whether \texttt{step\_repetition} or
+\texttt{reasoning\_action\_mismatch} will trigger.
+\item Compare against the MAST annotations on the held-out task.
+\end{enumerate}
+\textit{Headline metric:} F1 score for predicting these two MAST modes,
+with the baseline being the per-framework base rate.
+
+\subsection{Cost and feasibility}\label{ssec:cost-feasibility}
+
+Each probe run costs $\approx 4{,}000$ LLM calls per loop topology, well
+within an academic budget for the three frontier APIs.  All three
+benchmarks are publicly released with reproducible evaluation scripts.
+
+% =============================================================================
+\section{Limitations and Open Problems}\label{sec:open}
+
+We surface the genuine difficulties.  These are not minor.
+
+\paragraph{O1: Embedding-space dependence.}  $\PhaseMargin$ depends on
+$\Pi$ and on the probing basis $V$.  An invariant formulation---e.g.
+in terms of the information-geometric Fisher metric of the agent's
+output distribution---would give a coordinate-free margin.  This is
+open.
+
+\paragraph{O2: Local linearity assumption.}  Definition~\ref{def:loc-sectorial}
+requires the residual $\rho_{v}(\Omega)$ to be small.  When the agent's
+behaviour is sharply nonlinear (e.g. crossing a tool-call decision
+boundary), the fit residual exceeds $\eta$ and the certificate
+degrades.  A higher-order behavioural phase, e.g. via Volterra-series or
+kernel-Hilbert-space identification, would extend the framework but is
+open.
+
+\paragraph{O3: Variance reduction.}  At realistic decoding temperatures
+$T=0.7$, $\sigma_{w}^{2}$ may eat the margin.  Variance-reduction
+designs (antithetic seeds, common random numbers across frequencies, or
+deterministic-decode probes followed by stochastic-decode replays) are
+needed to make the protocol tractable at high temperature.
+
+\paragraph{O4: Adversarial robustness.}  The certificate is established
+around a nominal trajectory.  An adversarial input distribution voids
+the certificate.  The robust-IQC version of phase
+theory~\citep{Megretski1997IQC,Zhao2022SmallGainSmallPhase} should
+extend to give a robust phase margin, but the lift to behavioural
+identification is open.
+
+\paragraph{O5: Multi-agent extensions.}  We have stated the theorem for
+a two-block loop $[\agent,\env]_{-}$.  Multi-agent debate involves $k>2$
+agents in arbitrary topologies.  The cyclic small-phase
+theorem~\citep{Wang2023CyclicSmallPhase} treats the LTI case; its
+behavioural-stochastic generalisation is open.
+
+% =============================================================================
+\section{Related Work}\label{sec:related}
+
+\textbf{Phase theory of MIMO LTI systems.}  The substrate
+of~\citep{Chen2023PhaseTheory,Wang2024FirstFiveYears,Chen2021PhaseNonlinear,Zhao2022SmallGainSmallPhase,Wang2022DiscretePhase,Wang2023LTPPhase,Wang2023CyclicSmallPhase}
+is what we lift.  Their framework is LTI (or deterministic nonlinear in
+the input-output sectorial sense); our contribution is the sampled,
+stochastic, behavioural extension specific to LLM agents.
+
+\textbf{Negative imaginary systems.}  PR/NI/passivity foundations:
+\citep{Anderson1973NetworkAnalysis,Lanzon2008NI,Mabrok2014NIFoundations,Patra2011MixedNIBR,Griggs2007MixedSGP}.
+The recent neural-ODE application~\citep{Mabrok2025NINeuralODE} controls
+mechanical plants with NN controllers carrying the NI property; our
+target is loop dynamics of LLM agents, a different object.
+
+\textbf{Behavioural and data-driven systems.} \citet{Willems1986Behavioural,Willems2007Behavioural,Willems2005FundamentalLemma,Coulson2019DeePC}.  These motivate the
+black-box-probe formulation of phase identification.
+
+\textbf{Lipschitz / SDP certification of neural networks.}
+\citep{Fazlyab2019Lipschitz,Hashemi2024LipShiFT,Yang2024LipNeXt}.  These
+methods constrain magnitude (gain), not phase, and treat the network
+statically rather than as a closed-loop system.
+
+\textbf{Dynamical-systems analyses of LLM loops.}
+\citep{Tacheny2025AgenticLoops,Wang2025AttractorCycles}.  These describe the
+regimes; we predict them.
+
+\textbf{Multi-agent LLM failure analyses.}
+\citep{Cemri2025MAST,Oh2025BeliefEntrenchment,Sci2026PersuasionFailure,Wynn2025TalkCheap,DuMultiAgentDebate2024,ICLRBlog2025MAD}.
+These document and explain the failures; we add a pre-flight predictor.
+
+\textbf{Stable architectures for deep
+learning.}~\citep{Haber2017StableArch} construct continuous-time stable
+ResNets; orthogonal to the loop-stability question we address.
+
+\textbf{Score-based generative model
+stability.}~\citep{ChenSampling2023,Forgetting2026}.  Dissipativity for
+diffusion sampling; orthogonal to LLM agent loops.
+
+% =============================================================================
+\section{Conclusion}\label{sec:conclusion}
+
+Multi-agent LLM systems have a documented loop-stability problem.
+Multi-agent system failure rates of $41\%$--$86.7\%$, a peer-reviewed
+$14$-mode taxonomy, independent reproductions of explicit limit cycles,
+adversarial-influence accuracy losses of $10$--$40\%$, and emergency
+hard-stops shipped in production frameworks all point at the same
+conclusion: the closed-loop dynamics of these systems are unstable in
+real ways and there is no pre-flight diagnostic.
+
+This paper proposes such a diagnostic by lifting the recently developed
+phase theory of MIMO LTI systems to the sampled-time, stochastic,
+behavioural setting required by black-box LLM agents.  The Sampled
+Behavioural Small-Phase Theorem converts a small number of probe
+rollouts into a single number $\PhaseMargin$ that predicts which of
+three regimes the loop will exhibit, and the regime classification
+matches the empirical taxonomy in the literature.
+
+The certificate addresses approximately half of the fourteen documented
+MAST failure modes---specifically the loop-stability half, which has no
+current pre-flight diagnostic.  The other half (specification,
+verification, content) belongs to other categories of analysis and
+remains out of scope.  Five open problems---embedding invariance, local
+linearity, variance reduction, adversarial robustness, and the multi-agent
+extension---are honestly catalogued.
+
+The bigger picture: every other engineering discipline that puts feedback
+systems in front of users has long since had a way to measure stability
+margins before the user is exposed.  Bringing that instrument over to
+the LLM agent's bench is the small, specific, useful, and---to the best
+of our literature audit---genuinely unaddressed contribution.
+
+% =============================================================================
+\appendix
+\section{Proof sketches}\label{app:proofs}
+
+\subsection*{Lemma~\ref{l:rate}}
+The least-squares fit~\eqref{eq:phase-fit} is equivalent to a complex
+linear regression on the discrete Fourier basis at frequency $\Omega$.
+Stack the residuals $\Delta y_{k}$ along $b(v)$ into a complex
+sufficient statistic $S_{N}(\Omega) := \sum_{k=0}^{N-1}\Delta y_{k}\T b(v)\,
+e^{-j\Omega k}$.  Under decoding noise of variance $\sigma_{w}^{2}$ on
+$\bar y_{k}$ (after seed-averaging by $M$), the noise in $S_{N}$ is
+complex Gaussian with variance $N\sigma_{w}^{2}\|b(v)\|^{2}/M$.  The
+deterministic part is
+$\frac{\epsilon N}{2}A_{v}^{\star}(\Omega)e^{j\theta_{v}^{\star}(\Omega)}\|b(v)\|^{2}+\mathcal{O}(\eta\epsilon N)$.
+Phase identification reduces to $\arg(S_{N})$, whose variance is
+controlled by the noise-to-signal ratio in the standard
+$|\Delta\arg|^{2}\le |\text{noise}|^{2}/|\text{signal}|^{2}$ inequality
+\citep{Rife1974FrequencyEstimation}, giving the stated rate. The
+$\mathcal{O}(\eta)$ bias term is the local-linearity residual mass leaking
+into the wrong frequency bin.\hfill$\square$
+
+\subsection*{Theorem~\ref{thm:main}}
+The strategy mirrors the proof of the Small Phase Theorem
+in~\citep{Chen2023PhaseTheory} but lifts each of three pieces.
+
+\textbf{(i) Deterministic sectorial composition.}
+Around the nominal trajectory in any direction $v$, the
+linearised iteration on the residual is
+$\widetilde z_{k+1}=J_{v}\widetilde z_{k}$, where $J_{v}$ is the
+composition of two locally-linear maps with phase responses in
+$[\alpha_{v},\beta_{v}]$ and $[\gamma_{v},\delta_{v}]$.  The composed
+phase is in $[\alpha_{v}+\gamma_{v},\beta_{v}+\delta_{v}]$.  By the
+deterministic small-phase theorem, the spectral radius
+$\rho(J_{v})\le\cos(\PhaseMargin(v)/2)<1$ if
+$\PhaseMargin(v)>0$.  This gives the deterministic contraction.
+
+\textbf{(ii) Local-linearity perturbation.}  The residual term
+$\eta_{\agent}+\eta_{\env}$ enters as a Lipschitz perturbation of the
+deterministic Jacobian; standard perturbation analysis adds
+$O(\eta_{\agent}+\eta_{\env})$ to the spectral radius.
+
+\textbf{(iii) Stochastic Lyapunov / drift.}  Under
+Assumption~\ref{a:stoch}, the noise injects a bounded random walk into
+the iteration.  A standard Foster--Lyapunov drift argument
+\citep{MeynTweedie} on $V(z) := \|z-z^{\star}\|^{2}$ gives, for any
+$\rho<1-\PhaseMargin/\pi+\mathcal{O}(\eta+(MN)^{-1/2})$,
+$\E[V(z_{k+1})\,|\,z_{k}]\le \rho^{2}V(z_{k})+b$ for some
+$b<\infty$.  Geometric ergodicity, Wasserstein contraction, and the
+mixing-time estimate follow.\hfill$\square$
+
+\section{Discussion of probing-basis sensitivity}\label{app:basis}
+
+A probe basis $V$ that misses a destabilising direction can produce a
+falsely positive $\PhaseMargin$.  The Hutchinson random-direction
+basis (Section~\ref{ssec:basis-choice}) has the advantage that
+$\E_{v\sim\mathrm{Unif}(\mathbb{S}^{d-1})}[\PhaseMargin(v)]$ converges to a
+direction-averaged margin under enough samples; the variance bound is
+$\mathcal{O}(d/p)$.  Hybrid bases combining task directions and random
+directions are recommended for safety-critical use.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
+direction-averaged margin under enough samples

@@ -1,0 +1,25 @@
+{
+  "n_successful_runs": 18,
+  "H1_oscillatory_recall": {
+    "definition": "P(predicted_oscillatory | observed_oscillatory)  where observed = period-2 purity > 1.15  and  predicted = report.regime == oscillatory OR phi_min < 0.10",
+    "n_observed_oscillatory": 12,
+    "n_correctly_predicted": 7,
+    "rate": 0.5833333333333334
+  },
+  "H2_contractive_specificity": {
+    "definition": "P(predicted_contractive | observed_contractive)  where observed = purity < 0.87  and  predicted = regime == contractive AND phi_min > 1.00",
+    "n_observed_contractive": 0,
+    "n_correctly_predicted": 0,
+    "rate": 0.0
+  },
+  "H3_size_vs_phi_min_per_prompt_correlation": {
+    "factual": 0.34166410189485164,
+    "emotional": -0.4096440151864576,
+    "technical": NaN
+  },
+  "H4_verbosity_is_smallest_margin": {
+    "n_runs_with_directions": 18,
+    "n_verbosity_smallest": 12,
+    "rate": 0.6666666666666666
+  }
+}

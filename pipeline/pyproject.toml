@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phase-margin"
+version = "0.1.0"
+description = "Black-box phase-margin certification of LLM agentic loops"
+authors = [{ name = "Mohamed A. Mabrok", email = "m.a.mabrok@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = [
+  "control-theory", "phase-margin", "llm", "agents",
+  "negative-imaginary", "behavioural-systems"
+]
+
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.11",
+  "matplotlib>=3.7",
+  "pyyaml>=6.0",
+  "pandas>=2.0",
+  "tqdm>=4.65",
+  # Embedding default backend (kept optional via extras as well so the
+  # core package installs cleanly on a constrained environment).
+  "sentence-transformers>=2.2 ; python_version<'4.0'",
+]
+
+[project.optional-dependencies]
+anthropic   = ["anthropic>=0.34"]
+ollama      = ["ollama>=0.3"]
+notebooks   = ["jupyterlab>=4.0", "ipykernel>=6.25", "seaborn>=0.13"]
+dev         = ["pytest>=7.0", "pytest-cov>=4.1", "ruff>=0.5"]
+
+[project.scripts]
+phase-margin = "phase_margin.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

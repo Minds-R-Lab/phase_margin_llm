@@ -1,0 +1,11 @@
+{
+  "horizon": 10,
+  "n_seeds": 2,
+  "n_seeds_nominal": 2,
+  "n_frequencies": 4,
+  "omega_min": 0.0,
+  "omega_max": 3.141592653589793,
+  "epsilon": 0.6,
+  "residual_cap": 0.9,
+  "margin_buffer": 0.05
+}

@@ -1,0 +1,15 @@
+# Minimum runtime dependencies for the phase-margin pipeline.
+# Install via:  pip install -r requirements.txt
+numpy>=1.24
+scipy>=1.11
+matplotlib>=3.7
+pandas>=2.0
+pyyaml>=6.0
+tqdm>=4.65
+# Optional (uncomment as needed):
+# sentence-transformers>=2.2
+# anthropic>=0.34
+# ollama>=0.3
+# jupyterlab>=4.0
+# seaborn>=0.13
+# pytest>=7.0

@@ -1,0 +1,8 @@
+{
+  "horizon": 10,
+  "n_seeds": 2,
+  "n_seeds_nominal": 2,
+  "n_frequencies": 4,
+  "epsilon": 0.6,
+  "residual_cap": 0.9
+}

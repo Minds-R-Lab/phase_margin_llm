@@ -1,0 +1,170 @@
+2026-04-28 20:32:07 [INFO] ============================================================================
+2026-04-28 20:32:07 [INFO] phase-margin extensive validation  v2026.04.28
+2026-04-28 20:32:07 [INFO] output dir: results/experiment_20260428_203207_full_v1
+2026-04-28 20:32:07 [INFO] ============================================================================
+2026-04-28 20:32:07 [INFO] models   : qwen2.5:7b, qwen2.5:14b, llama3.1:70b-instruct-q4_K_M
+2026-04-28 20:32:07 [INFO] prompts  : factual, emotional, technical
+2026-04-28 20:32:07 [INFO] seeds    : 2
+2026-04-28 20:32:07 [INFO] horizon  : probe 10, ground-truth 40
+2026-04-28 20:32:07 [INFO] freqs    : 4
+2026-04-28 20:32:07 [INFO] epsilon  : 0.6
+2026-04-28 20:32:07 [INFO] perm test: 500 permutations
+2026-04-28 20:32:08 [INFO] loading sentence-transformers embedder ...
+2026-04-28 20:32:19 [INFO]   embedder: sentence-transformers/all-MiniLM-L6-v2 (dim=384)
+2026-04-28 20:32:19 [INFO]   >>> qwen2.5:7b / factual / seed=0  ->  qwen2.5_7b__factual__seed0
+2026-04-28 20:33:33 [INFO]       certificate: Phi = +0.710 (contractive) in 74s
+2026-04-28 20:33:33 [INFO]       ground-truth rollout ...
+2026-04-28 20:33:41 [INFO]       purity(p=2) = 1.815  (p-val 0)  ->  oscillatory
+2026-04-28 20:33:41 [INFO]       autocorr regime = unknown  (score 0.745 at lag 4)
+2026-04-28 20:33:41 [INFO]       ground truth rollout in 6s
+2026-04-28 20:33:41 [INFO]       cell wall time: 82s
+2026-04-28 20:33:41 [INFO]   >>> qwen2.5:7b / factual / seed=1  ->  qwen2.5_7b__factual__seed1
+2026-04-28 20:34:55 [INFO]       certificate: Phi = +0.710 (contractive) in 74s
+2026-04-28 20:34:55 [INFO]       ground-truth rollout ...
+2026-04-28 20:35:03 [INFO]       purity(p=2) = 2.492  (p-val 0)  ->  oscillatory
+2026-04-28 20:35:03 [INFO]       autocorr regime = unknown  (score 0.819 at lag 2)
+2026-04-28 20:35:03 [INFO]       ground truth rollout in 7s
+2026-04-28 20:35:03 [INFO]       cell wall time: 82s
+2026-04-28 20:35:03 [INFO]   >>> qwen2.5:7b / emotional / seed=0  ->  qwen2.5_7b__emotional__seed0
+2026-04-28 20:36:28 [INFO]       certificate: Phi = +0.000 (oscillatory) in 85s
+2026-04-28 20:36:28 [INFO]       ground-truth rollout ...
+2026-04-28 20:36:40 [INFO]       purity(p=2) = 1.061  (p-val 0)  ->  unknown
+2026-04-28 20:36:40 [INFO]       autocorr regime = unknown  (score 0.399 at lag 2)
+2026-04-28 20:36:40 [INFO]       ground truth rollout in 11s
+2026-04-28 20:36:40 [INFO]       cell wall time: 97s
+2026-04-28 20:36:40 [INFO]   >>> qwen2.5:7b / emotional / seed=1  ->  qwen2.5_7b__emotional__seed1
+2026-04-28 20:38:05 [INFO]       certificate: Phi = +0.000 (oscillatory) in 85s
+2026-04-28 20:38:05 [INFO]       ground-truth rollout ...
+2026-04-28 20:38:15 [INFO]       purity(p=2) = 0.989  (p-val 0.802)  ->  unknown
+2026-04-28 20:38:15 [INFO]       autocorr regime = unknown  (score 0.396 at lag 2)
+2026-04-28 20:38:15 [INFO]       ground truth rollout in 9s
+2026-04-28 20:38:15 [INFO]       cell wall time: 95s
+2026-04-28 20:38:15 [INFO]   >>> qwen2.5:7b / technical / seed=0  ->  qwen2.5_7b__technical__seed0
+2026-04-28 20:39:45 [INFO]       certificate: Phi = +0.000 (oscillatory) in 89s
+2026-04-28 20:39:45 [INFO]       ground-truth rollout ...
+2026-04-28 20:39:55 [INFO]       purity(p=2) = 2.458  (p-val 0)  ->  oscillatory
+2026-04-28 20:39:55 [INFO]       autocorr regime = unknown  (score 0.674 at lag 4)
+2026-04-28 20:39:55 [INFO]       ground truth rollout in 9s
+2026-04-28 20:39:55 [INFO]       cell wall time: 100s
+2026-04-28 20:39:55 [INFO]   >>> qwen2.5:7b / technical / seed=1  ->  qwen2.5_7b__technical__seed1
+2026-04-28 20:41:25 [INFO]       certificate: Phi = +0.000 (oscillatory) in 90s
+2026-04-28 20:41:25 [INFO]       ground-truth rollout ...
+2026-04-28 20:41:35 [INFO]       purity(p=2) = 2.247  (p-val 0)  ->  oscillatory
+2026-04-28 20:41:35 [INFO]       autocorr regime = unknown  (score 0.630 at lag 2)
+2026-04-28 20:41:35 [INFO]       ground truth rollout in 9s
+2026-04-28 20:41:35 [INFO]       cell wall time: 100s
+2026-04-28 20:41:35 [INFO]   >>> qwen2.5:14b / factual / seed=0  ->  qwen2.5_14b__factual__seed0
+2026-04-28 20:43:24 [INFO]       certificate: Phi = +0.000 (oscillatory) in 109s
+2026-04-28 20:43:24 [INFO]       ground-truth rollout ...
+2026-04-28 20:43:34 [INFO]       purity(p=2) = 15.846  (p-val 0)  ->  oscillatory
+2026-04-28 20:43:34 [INFO]       autocorr regime = oscillatory  (score 0.968 at lag 2)
+2026-04-28 20:43:34 [INFO]       ground truth rollout in 9s
+2026-04-28 20:43:34 [INFO]       cell wall time: 119s
+2026-04-28 20:43:34 [INFO]   >>> qwen2.5:14b / factual / seed=1  ->  qwen2.5_14b__factual__seed1
+2026-04-28 20:45:09 [INFO]       certificate: Phi = +0.000 (oscillatory) in 95s
+2026-04-28 20:45:09 [INFO]       ground-truth rollout ...
+2026-04-28 20:45:19 [INFO]       purity(p=2) = 2.127  (p-val 0)  ->  oscillatory
+2026-04-28 20:45:19 [INFO]       autocorr regime = oscillatory  (score 0.965 at lag 4)
+2026-04-28 20:45:19 [INFO]       ground truth rollout in 9s
+2026-04-28 20:45:19 [INFO]       cell wall time: 105s
+2026-04-28 20:45:19 [INFO]   >>> qwen2.5:14b / emotional / seed=0  ->  qwen2.5_14b__emotional__seed0
+2026-04-28 20:47:10 [INFO]       certificate: Phi = +0.626 (contractive) in 112s
+2026-04-28 20:47:10 [INFO]       ground-truth rollout ...
+2026-04-28 20:47:23 [INFO]       purity(p=2) = 2.174  (p-val 0)  ->  oscillatory
+2026-04-28 20:47:23 [INFO]       autocorr regime = unknown  (score 0.764 at lag 2)
+2026-04-28 20:47:23 [INFO]       ground truth rollout in 12s
+2026-04-28 20:47:23 [INFO]       cell wall time: 125s
+2026-04-28 20:47:23 [INFO]   >>> qwen2.5:14b / emotional / seed=1  ->  qwen2.5_14b__emotional__seed1
+2026-04-28 20:49:15 [INFO]       certificate: Phi = +0.626 (contractive) in 112s
+2026-04-28 20:49:15 [INFO]       ground-truth rollout ...
+2026-04-28 20:49:26 [INFO]       purity(p=2) = 1.188  (p-val 0)  ->  oscillatory
+2026-04-28 20:49:26 [INFO]       autocorr regime = unknown  (score 0.555 at lag 6)
+2026-04-28 20:49:26 [INFO]       ground truth rollout in 10s
+2026-04-28 20:49:26 [INFO]       cell wall time: 123s
+2026-04-28 20:49:26 [INFO]   >>> qwen2.5:14b / technical / seed=0  ->  qwen2.5_14b__technical__seed0
+2026-04-28 20:51:26 [INFO]       certificate: Phi = +0.000 (oscillatory) in 119s
+2026-04-28 20:51:26 [INFO]       ground-truth rollout ...
+2026-04-28 20:51:39 [INFO]       purity(p=2) = 3.037  (p-val 0)  ->  oscillatory
+2026-04-28 20:51:39 [INFO]       autocorr regime = unknown  (score 0.788 at lag 2)
+2026-04-28 20:51:39 [INFO]       ground truth rollout in 13s
+2026-04-28 20:51:39 [INFO]       cell wall time: 133s
+2026-04-28 20:51:39 [INFO]   >>> qwen2.5:14b / technical / seed=1  ->  qwen2.5_14b__technical__seed1
+2026-04-28 20:53:38 [INFO]       certificate: Phi = +0.000 (oscillatory) in 119s
+2026-04-28 20:53:38 [INFO]       ground-truth rollout ...
+2026-04-28 20:53:52 [INFO]       purity(p=2) = 7.794  (p-val 0)  ->  oscillatory
+2026-04-28 20:53:52 [INFO]       autocorr regime = unknown  (score 0.842 at lag 2)
+2026-04-28 20:53:52 [INFO]       ground truth rollout in 13s
+2026-04-28 20:53:52 [INFO]       cell wall time: 133s
+2026-04-28 20:53:52 [INFO]   >>> llama3.1:70b-instruct-q4_K_M / factual / seed=0  ->  llama3.1_70b-instruct-q4_K_M__factual__seed0
+2026-04-28 21:28:15 [INFO]       certificate: Phi = +1.704 (contractive) in 2063s
+2026-04-28 21:28:15 [INFO]       ground-truth rollout ...
+2026-04-28 21:31:32 [INFO]       purity(p=2) = 1.339  (p-val 0)  ->  oscillatory
+2026-04-28 21:31:32 [INFO]       autocorr regime = unknown  (score 0.561 at lag 2)
+2026-04-28 21:31:32 [INFO]       ground truth rollout in 196s
+2026-04-28 21:31:32 [INFO]       cell wall time: 2259s
+2026-04-28 21:31:32 [INFO]   >>> llama3.1:70b-instruct-q4_K_M / factual / seed=1  ->  llama3.1_70b-instruct-q4_K_M__factual__seed1
+2026-04-28 22:05:32 [INFO]       certificate: Phi = +0.026 (oscillatory) in 2041s
+2026-04-28 22:05:32 [INFO]       ground-truth rollout ...
+2026-04-28 22:08:51 [INFO]       purity(p=2) = 1.010  (p-val 0.122)  ->  unknown
+2026-04-28 22:08:51 [INFO]       autocorr regime = unknown  (score 0.456 at lag 2)
+2026-04-28 22:08:51 [INFO]       ground truth rollout in 197s
+2026-04-28 22:08:51 [INFO]       cell wall time: 2239s
+2026-04-28 22:08:51 [INFO]   >>> llama3.1:70b-instruct-q4_K_M / emotional / seed=0  ->  llama3.1_70b-instruct-q4_K_M__emotional__seed0
+2026-04-28 22:47:12 [INFO]       certificate: Phi = +0.000 (oscillatory) in 2302s
+2026-04-28 22:47:12 [INFO]       ground-truth rollout ...
+2026-04-28 22:50:46 [INFO]       purity(p=2) = 1.339  (p-val 0)  ->  oscillatory
+2026-04-28 22:50:46 [INFO]       autocorr regime = unknown  (score 0.564 at lag 2)
+2026-04-28 22:50:46 [INFO]       ground truth rollout in 213s
+2026-04-28 22:50:46 [INFO]       cell wall time: 2516s
+2026-04-28 22:50:46 [INFO]   >>> llama3.1:70b-instruct-q4_K_M / emotional / seed=1  ->  llama3.1_70b-instruct-q4_K_M__emotional__seed1
+2026-04-28 23:29:11 [INFO]       certificate: Phi = +0.000 (oscillatory) in 2305s
+2026-04-28 23:29:11 [INFO]       ground-truth rollout ...
+2026-04-28 23:32:53 [INFO]       purity(p=2) = 1.047  (p-val 0.006)  ->  unknown
+2026-04-28 23:32:53 [INFO]       autocorr regime = unknown  (score 0.391 at lag 2)
+2026-04-28 23:32:53 [INFO]       ground truth rollout in 221s
+2026-04-28 23:32:53 [INFO]       cell wall time: 2527s
+2026-04-28 23:32:53 [INFO]   >>> llama3.1:70b-instruct-q4_K_M / technical / seed=0  ->  llama3.1_70b-instruct-q4_K_M__technical__seed0
+2026-04-29 00:10:48 [INFO]       certificate: Phi = +0.000 (oscillatory) in 2275s
+2026-04-29 00:10:48 [INFO]       ground-truth rollout ...
+2026-04-29 00:14:31 [INFO]       purity(p=2) = 1.082  (p-val 0)  ->  unknown
+2026-04-29 00:14:31 [INFO]       autocorr regime = unknown  (score 0.370 at lag 2)
+2026-04-29 00:14:31 [INFO]       ground truth rollout in 223s
+2026-04-29 00:14:31 [INFO]       cell wall time: 2498s
+2026-04-29 00:14:31 [INFO]   >>> llama3.1:70b-instruct-q4_K_M / technical / seed=1  ->  llama3.1_70b-instruct-q4_K_M__technical__seed1
+2026-04-29 00:52:50 [INFO]       certificate: Phi = +0.000 (oscillatory) in 2299s
+2026-04-29 00:52:50 [INFO]       ground-truth rollout ...
+2026-04-29 00:55:59 [INFO]       purity(p=2) = 1.021  (p-val 0.064)  ->  unknown
+2026-04-29 00:55:59 [INFO]       autocorr regime = unknown  (score 0.512 at lag 2)
+2026-04-29 00:55:59 [INFO]       ground truth rollout in 188s
+2026-04-29 00:55:59 [INFO]       cell wall time: 2488s
+2026-04-29 00:55:59 [INFO] ============================================================================
+2026-04-29 00:55:59 [INFO] all cells finished in 15820s (263.7m)
+2026-04-29 00:55:59 [INFO] hypothesis evaluation:
+2026-04-29 00:55:59 [INFO] {
+  "n_successful_runs": 18,
+  "H1_oscillatory_recall": {
+    "definition": "P(predicted_oscillatory | observed_oscillatory)  where observed = period-2 purity > 1.15  and  predicted = report.regime == oscillatory OR phi_min < 0.10",
+    "n_observed_oscillatory": 12,
+    "n_correctly_predicted": 7,
+    "rate": 0.5833333333333334
+  },
+  "H2_contractive_specificity": {
+    "definition": "P(predicted_contractive | observed_contractive)  where observed = purity < 0.87  and  predicted = regime == contractive AND phi_min > 1.00",
+    "n_observed_contractive": 0,
+    "n_correctly_predicted": 0,
+    "rate": 0.0
+  },
+  "H3_size_vs_phi_min_per_prompt_correlation": {
+    "factual": 0.34166410189485164,
+    "emotional": -0.4096440151864576,
+    "technical": NaN
+  },
+  "H4_verbosity_is_smallest_margin": {
+    "n_runs_with_directions": 18,
+    "n_verbosity_smallest": 12,
+    "rate": 0.6666666666666666
+  }
+}
+2026-04-29 00:56:00 [INFO] plots written to results/experiment_20260428_203207_full_v1/plots
+2026-04-29 00:56:00 [INFO] ============================================================================
+2026-04-29 00:56:00 [INFO] done.

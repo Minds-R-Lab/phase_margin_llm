@@ -1,0 +1,11 @@
+{
+  "purity_period_2": 0.9891347158978356,
+  "purity_p_value_2": 0.802,
+  "purity_period_3": 0.9874061019188263,
+  "period_2_regime": "unknown",
+  "autocorr_regime": "unknown",
+  "autocorr_period_score": 0.3963183391648214,
+  "autocorr_period_lag": 2,
+  "final_variance": 0.38753121628525034,
+  "growth_rate": 0.005023044573542552
+}

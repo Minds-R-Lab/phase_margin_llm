@@ -1,0 +1,28 @@
+# Local zips and caches
+*.zip
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+.DS_Store
+
+# LaTeX build artefacts (keep .tex, .bib, .pdf only)
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.toc
+*.synctex.gz
+
+# Local Anthropic / Ollama caches
+data/cache/
