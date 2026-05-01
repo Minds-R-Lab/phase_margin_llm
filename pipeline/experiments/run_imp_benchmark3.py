@@ -518,4 +518,11 @@ def main(argv=None):
                 f"hurts={v['b_hurts_at_p_0_05']}"
             )
 
-    log.info(f"\nwall time this session: 
+    log.info(f"\nwall time this session: {fmt_eta(time.time() - t_start)}")
+    log.info("=" * 76)
+    log.info("done.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
