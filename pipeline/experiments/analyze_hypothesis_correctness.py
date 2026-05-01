@@ -243,13 +243,25 @@ def classify_cell(cell: CellLite) -> dict[str, Any]:
 # 3.  Decomposition: error by hypothesis-correctness category
 # ===========================================================================
 def decompose(cells: list[CellLite],
-              im_condition: str = "im_hypothesis",
+              im_condition: str | list[str] | None = None,
               reactive_condition: str = "reactive",
               correct_threshold: float = 0.66,
               ) -> dict[str, Any]:
     """Group im_condition cells by hypothesis-correct-in-asym rate, and
     compare each group's mean asym_error to the same task's reactive
-    asym_error."""
+    asym_error.
+
+    ``im_condition`` accepts either a single name or a list of names.
+    Defaults to the union of v2 and v3 naming conventions so the same
+    analyzer works on both: {"im_hypothesis", "internal_hypothesis"}.
+    """
+    if im_condition is None:
+        im_conditions = {"im_hypothesis", "internal_hypothesis"}
+    elif isinstance(im_condition, str):
+        im_conditions = {im_condition}
+    else:
+        im_conditions = set(im_condition)
+
     # Group reactive cells by task for paired lookup
     reactive_by_task: dict[str, list[float]] = {}
     for c in cells:
@@ -261,7 +273,7 @@ def decompose(cells: list[CellLite],
 
     classified = []
     for c in cells:
-        if c.condition != im_condition:
+        if c.condition not in im_conditions:
             continue
         d = classify_cell(c)
         d["reactive_asym_error_for_task"] = reactive_mean.get(c.task)
@@ -347,7 +359,7 @@ def main(argv=None):
         if s["n"] == 0:
             print(f"  {bin_name:12s}  {0:5d}  --")
             continue
-        rx = s["mean_reactive_asym_error"]
+        rx = s.get("mean_reactive_asym_error")
         rx_str = f"{rx:12.3f}" if rx is not None else f"{'-':>12s}"
         gap = (s["mean_im_asym_error"] - rx) if rx is not None else None
         gap_str = f"{gap:+.3f}" if gap is not None else "-"
@@ -355,7 +367,6 @@ def main(argv=None):
               f"{s['mean_im_asym_error']:12.3f}  {rx_str}  {gap_str}")
     print(f"\n  written {out_path}")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

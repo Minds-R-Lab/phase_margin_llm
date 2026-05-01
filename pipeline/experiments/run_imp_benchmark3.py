@@ -127,17 +127,19 @@ def system_im_oracle(task_description: str) -> str:
 
 
 CONDITIONS = {
-    "reactive":             SYSTEM_REACTIVE,           # v2 baseline
-    "im_hypothesis":        SYSTEM_IM_HYPOTHESIS,      # v2 main arm
-    "im_cot":               SYSTEM_IM_COT,             # v2 CoT arm
-    "im_hyp_sc5":           SYSTEM_IM_HYPOTHESIS,      # v3 NEW (uses base hyp prompt)
-    "im_oracle":            "<dynamic>",                # v3 NEW (per-task)
-    "im_hyp_first":         SYSTEM_IM_HYP_FIRST,       # v3 NEW
-    "im_hyp_eqbudget":      SYSTEM_IM_HYPOTHESIS,      # v3 NEW (same prompt, more tokens)
+    # Names match v2 (internal_*) so cells.jsonl from v2 and v3 can be
+    # joined task-for-task seed-for-seed without remapping.
+    "reactive":             SYSTEM_REACTIVE,            # v2 baseline
+    "internal_hypothesis":  SYSTEM_IM_HYPOTHESIS,       # v2 main arm
+    "internal_cot":         SYSTEM_IM_COT,              # v2 CoT arm
+    "im_hyp_sc5":           SYSTEM_IM_HYPOTHESIS,       # v3 NEW (uses base hyp prompt)
+    "im_oracle":            "<dynamic>",                 # v3 NEW (per-task)
+    "im_hyp_first":         SYSTEM_IM_HYP_FIRST,        # v3 NEW
+    "im_hyp_eqbudget":      SYSTEM_IM_HYPOTHESIS,       # v3 NEW (same prompt, more tokens)
 }
 
 NEW_V3_CONDITIONS = ["im_hyp_sc5", "im_oracle", "im_hyp_first", "im_hyp_eqbudget"]
-BASELINE_CONDITIONS = ["reactive", "im_hypothesis", "im_cot"]
+BASELINE_CONDITIONS = ["reactive", "internal_hypothesis", "internal_cot"]
 
 
 # ===========================================================================
@@ -219,7 +221,7 @@ def run_cell_v3(
         sys_prompt = system_im_oracle(task.description)
     else:
         sys_prompt = CONDITIONS[condition]
-    if condition == "im_cot" or condition == "im_hyp_eqbudget":
+    if condition in ("internal_cot", "im_hyp_eqbudget"):
         max_tok = 256
     else:
         max_tok = 96
@@ -516,11 +518,4 @@ def main(argv=None):
                 f"hurts={v['b_hurts_at_p_0_05']}"
             )
 
-    log.info(f"\nwall time this session: {fmt_eta(time.time() - t_start)}")
-    log.info("=" * 76)
-    log.info("done.")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    log.info(f"\nwall time this session: 
