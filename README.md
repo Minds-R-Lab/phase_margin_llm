@@ -165,6 +165,11 @@ an interruption picks up at the next un-recorded cell.
 
 ## Citation
 
+The repository ships with a [`CITATION.cff`](CITATION.cff) so GitHub's
+"Cite this repository" widget (top-right of the repo home page)
+produces a copy-paste BibTeX entry automatically.  The same entry,
+preformatted:
+
 ```bibtex
 @misc{mabrok2026apply,
   title  = {Apply, Don't Articulate: A Multi-Paradigm Study of
@@ -177,6 +182,37 @@ an interruption picks up at the next un-recorded cell.
             for the detailed treatment.}
 }
 ```
+
+Once the paper has a Zenodo DOI (see below), the BibTeX entry should
+be augmented with a `doi` field of the form
+`doi = {10.5281/zenodo.XXXXXXX}`.
+
+### Archiving a release on Zenodo (one-time setup)
+
+A Zenodo DOI provides a permanent, citable archive of a tagged release.
+The flow is:
+
+1. Sign into [Zenodo](https://zenodo.org) with your GitHub account
+   (`Account → GitHub`).
+2. Toggle this repository (`Minds-R-Lab/phase_margin_llm`) to **On**
+   under the GitHub linked-repos list.  Zenodo will start watching for
+   GitHub releases.
+3. Cut a GitHub release.  This repository is already tagged `v1.0` ---
+   convert the tag to a release in
+   [Releases](https://github.com/Minds-R-Lab/phase_margin_llm/releases)
+   (or via `gh release create v1.0 --notes-file CHANGELOG.md`).
+4. Zenodo automatically mints a DOI and snapshots the tagged source.
+   The DOI is visible on the repository's Zenodo entry within a few
+   minutes.
+5. Update `CITATION.cff` and the BibTeX block above with
+   `doi: 10.5281/zenodo.XXXXXXX` once the DOI is issued.
+
+For the **NeurIPS 2026 anonymous-period submission**, the
+`papers/imp_paper_v3_submission.tex` / `.pdf` files in this repository
+contain the strict double-blind version with author identifiers
+removed and the GitHub URL replaced by an anonymous-link placeholder.
+Submit that one; the named v3 (`papers/imp_paper_v3.{tex,pdf}`)
+becomes the camera-ready version after acceptance.
 
 ## Background and lineage
 

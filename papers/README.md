@@ -48,3 +48,12 @@ NeurIPS-approximating preamble (geometry/titlesec); for actual NeurIPS
 submission, replace lines 1--19 with `\usepackage[final]{neurips_2026}`
 and update the author block per the official template's
 double-blind submission instructions.
+
+
+## Anonymous submission version
+
+`imp_paper_v3_submission.{tex,pdf}` is the strict double-blind version
+of v3 with author identifiers removed and the GitHub URL replaced by
+an anonymous-link placeholder.  Submit this file during the NeurIPS
+2026 review period; switch to `imp_paper_v3.{tex,pdf}` for the
+camera-ready version after acceptance.

@@ -1,0 +1,53 @@
+cff-version: 1.2.0
+title: >-
+  Apply, Don't Articulate: A Multi-Paradigm Study of Internal-Model
+  Prompting in Large Language Models
+message: >-
+  If you use this work, please cite the v3 NeurIPS-format paper or the
+  v2 detailed treatment as appropriate.
+type: software
+authors:
+  - given-names: Mohamed A.
+    family-names: Mabrok
+    email: m.a.mabrok@gmail.com
+repository-code: 'https://github.com/Minds-R-Lab/phase_margin_llm'
+abstract: >-
+  We test the practitioner reading of the Internal Model Principle of
+  Francis and Wonham (1976) — "ask the LLM to articulate an internal
+  model of its environment before acting" — across 16,000+ prompted
+  trials in two distinct symbolic paradigms (deterministic integer
+  sequence prediction and Python code debugging) and seven open-weight
+  model scales (Qwen2.5 / Qwen2.5-Coder 7B/14B/32B; Llama3.1-70B-q4).
+  Articulating an internal model never significantly helps; the
+  IM-Hypothesis prompt collapses pass-rate by 97 percentage points at
+  Qwen2.5-Coder-14B in code debugging, the largest single
+  prompt-induced regression we are aware of. Four causal-mechanism arms
+  refute the simplest tokenized-commitment account but support a
+  sharper one: the harm is in rule-generation, not rule-application.
+  Providing the rule directly (Oracle) helps with monotone scale on
+  hard tasks, reaching an 84% asymptotic-error reduction at
+  Qwen-32B-hard sequence prediction. We propose this as a clean
+  cross-paradigm deployment principle: "maintain an internal model"
+  prompts hurt; "apply this stated rule" prompts help.
+keywords:
+  - large language models
+  - prompt engineering
+  - chain-of-thought
+  - internal model principle
+  - control theory
+  - code generation
+  - sequence prediction
+  - empirical evaluation
+license: MIT
+version: 1.0.0
+date-released: '2026-05-02'
+preferred-citation:
+  type: article
+  title: >-
+    Apply, Don't Articulate: A Multi-Paradigm Study of Internal-Model
+    Prompting in Large Language Models
+  authors:
+    - given-names: Mohamed A.
+      family-names: Mabrok
+  year: 2026
+  url: 'https://github.com/Minds-R-Lab/phase_margin_llm'
