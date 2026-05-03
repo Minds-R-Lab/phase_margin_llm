@@ -6,7 +6,7 @@
 
 This repository contains the benchmarks, prompts, graders, raw outputs,
 and analysis pipeline for the paper
-**[*Apply, Don't Articulate*](papers/imp_paper_v3.pdf)**.
+**Apply, Don't Articulate**.
 
 ## Headline finding
 
@@ -38,36 +38,13 @@ cannot reliably write a correct one.
 
 The full numbers, statistics (paired *t* + cluster-bootstrap CI),
 mechanism analysis, and limitations are in
-**[papers/imp_paper_v3.pdf](papers/imp_paper_v3.pdf)** (NeurIPS-format,
-7 pages) with the full detail in
-**[papers/imp_paper_v2.pdf](papers/imp_paper_v2.pdf)** (23 pages,
-intended as supplementary material).
-
-## Papers
-
-All three iterations are kept here for reference; the recommended
-entry points are **v3** (NeurIPS submission) and **v2** (detailed
-supplementary).
-
-| Version | Pages | Audience |  Source  |  PDF  |
-|--------:|------:|----------|----------|-------|
-| **v3**  |     7 | NeurIPS-style submission with the full empirical story compressed; recommended starting point. | [imp\_paper\_v3.tex](papers/imp_paper_v3.tex) | [imp\_paper\_v3.pdf](papers/imp_paper_v3.pdf) |
-| **v2**  |    23 | Full detailed write-up with all per-condition tables, the 4-way `(rule_correct × rule_followed)` decomposition, the inverted-*U* analysis, raw failure-mode replies, and complete appendices.  Intended as the v3 supplementary. | [imp\_paper\_v2.tex](papers/imp_paper_v2.tex) | [imp\_paper\_v2.pdf](papers/imp_paper_v2.pdf) |
-| **v1**  |    13 | Initial discovery (sequence prediction only, single-seed greedy, 30 hand-curated tasks).  Kept here for traceability of the empirical narrative; superseded by v2/v3 in scope and statistical strength. | [imp\_paper\_v1.tex](papers/imp_paper_v1.tex) | [imp\_paper\_v1.pdf](papers/imp_paper_v1.pdf) |
-
-A reader who only wants the result reads **v3**.
-A reader who wants the full data and mechanism analysis reads **v2**.
-A reader interested in how the empirical claim grew reads **v1 → v2 → v3** in order.
+the NeurIPS-format paper accompanying this repository (kept privately by the author for the time being).
 
 ## Repository structure
 
 ```
 phase_margin_llm/
 ├── README.md                           ← you are here
-├── papers/                             ← three iterations of the paper
-│   ├── imp_paper_v1.{tex,pdf}          (initial discovery — 13 pp)
-│   ├── imp_paper_v2.{tex,pdf}          (detailed, supplementary — 23 pp)
-│   └── imp_paper_v3.{tex,pdf}          (NeurIPS submission — 7 pp)
 └── pipeline/                           ← all code
     ├── README.md                       ← pipeline-level details
     ├── pyproject.toml
@@ -165,54 +142,11 @@ an interruption picks up at the next un-recorded cell.
 
 ## Citation
 
-The repository ships with a [`CITATION.cff`](CITATION.cff) so GitHub's
-"Cite this repository" widget (top-right of the repo home page)
-produces a copy-paste BibTeX entry automatically.  The same entry,
-preformatted:
-
-```bibtex
-@misc{mabrok2026apply,
-  title  = {Apply, Don't Articulate: A Multi-Paradigm Study of
-            Internal-Model Prompting in Large Language Models},
-  author = {Mohamed A. Mabrok},
-  year   = {2026},
-  url    = {https://github.com/Minds-R-Lab/phase_margin_llm},
-  note   = {See \texttt{papers/imp\_paper\_v3.pdf} for the
-            7-page version and \texttt{papers/imp\_paper\_v2.pdf}
-            for the detailed treatment.}
-}
-```
-
-Once the paper has a Zenodo DOI (see below), the BibTeX entry should
-be augmented with a `doi` field of the form
-`doi = {10.5281/zenodo.XXXXXXX}`.
-
-### Archiving a release on Zenodo (one-time setup)
-
-A Zenodo DOI provides a permanent, citable archive of a tagged release.
-The flow is:
-
-1. Sign into [Zenodo](https://zenodo.org) with your GitHub account
-   (`Account → GitHub`).
-2. Toggle this repository (`Minds-R-Lab/phase_margin_llm`) to **On**
-   under the GitHub linked-repos list.  Zenodo will start watching for
-   GitHub releases.
-3. Cut a GitHub release.  This repository is already tagged `v1.0` ---
-   convert the tag to a release in
-   [Releases](https://github.com/Minds-R-Lab/phase_margin_llm/releases)
-   (or via `gh release create v1.0 --notes-file CHANGELOG.md`).
-4. Zenodo automatically mints a DOI and snapshots the tagged source.
-   The DOI is visible on the repository's Zenodo entry within a few
-   minutes.
-5. Update `CITATION.cff` and the BibTeX block above with
-   `doi: 10.5281/zenodo.XXXXXXX` once the DOI is issued.
-
-For the **NeurIPS 2026 anonymous-period submission**, the
-`papers/imp_paper_v3_submission.tex` / `.pdf` files in this repository
-contain the strict double-blind version with author identifiers
-removed and the GitHub URL replaced by an anonymous-link placeholder.
-Submit that one; the named v3 (`papers/imp_paper_v3.{tex,pdf}`)
-becomes the camera-ready version after acceptance.
+Citation details for the accompanying paper will be added once it is
+publicly released.  This repository ships with a
+[`CITATION.cff`](CITATION.cff) for the code/benchmarks themselves
+(GitHub renders this as the "Cite this repository" widget on the
+repo home page).
 
 ## Background and lineage
 

@@ -7,8 +7,7 @@
 >    benchmarks under `experiments/run_imp_*.py`, code-debugging support
 >    in `src/phase_margin/coding/`, and the LLM clients in
 >    `src/phase_margin/llm/`.  See the
->    [top-level README](../README.md) and [papers/](../papers/) for the
->    primary write-up.
+>    [top-level README](../README.md) for the primary write-up.
 >
 > 2. **Phase-margin certification of multi-agent LLM systems** (the
 >    earlier control-theoretic loop-stability diagnosis) --- which the
