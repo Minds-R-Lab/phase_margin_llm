@@ -162,9 +162,9 @@ self-contained empirical investigation.
 
 ## License
 
-The code in `pipeline/` and the papers in `papers/` are released for
-research use. Please see the headers of individual files for any
-file-level licensing or attribution notes.
+The code in `pipeline/` is released for research use. Please see the
+headers of individual files for any file-level licensing or
+attribution notes.
 
 ## Contact
 
